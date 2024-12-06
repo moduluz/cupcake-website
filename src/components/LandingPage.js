@@ -1,8 +1,7 @@
 import React from "react";
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import Navbar from "./NavBar";
-import CakeModelScene from "./Cake Model";
+import CakeModelScene from "./Cake Model"; // Ensure this is correct
 
 // Styled Components
 const StyledSection = styled("section")({
@@ -18,22 +17,23 @@ const Container = styled("div")({
 export default function LandingPage() {
   return (
     <div style={{ backgroundColor: "white" }}>
-      {/* Navigation */}
-      <Navbar />
-
       {/* Hero Section */}
       <StyledSection id="home">
         <Container>
-          <div style={{ 
-            display: "flex", 
-            gap: "48px", 
-            alignItems: "center",
-            flexWrap: "wrap" 
-          }}>
-            <div style={{ 
-              flex: "1", 
-              minWidth: "300px" 
-            }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "48px",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                flex: "1",
+                minWidth: "300px",
+              }}
+            >
               <h1
                 style={{
                   fontSize: "64px",
@@ -41,7 +41,7 @@ export default function LandingPage() {
                   lineHeight: "1.1",
                   marginBottom: "24px",
                   color: "#333",
-                  fontFamily: "'Playfair Display', serif"
+                  fontFamily: "'Playfair Display', serif",
                 }}
               >
                 Delightful
@@ -69,7 +69,7 @@ export default function LandingPage() {
                   "&:hover": { backgroundColor: "#FFC700" },
                   padding: "12px 32px",
                   fontSize: "16px",
-                  textTransform: "none"
+                  textTransform: "none",
                 }}
               >
                 Order Now

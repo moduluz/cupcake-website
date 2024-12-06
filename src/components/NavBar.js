@@ -34,6 +34,12 @@ const OrderButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+const handleScroll = (id) => {
+  const section = document.getElementById(id);
+  if (section) section.scrollIntoView({ behavior: 'smooth' });
+};
+
+
 const Navbar = () => {
   return (
     <StyledAppBar position="sticky">
