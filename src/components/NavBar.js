@@ -1,7 +1,19 @@
-import React from 'react';
-import { AppBar, Toolbar, Button, Box, styled } from "@mui/material";
+import React, { useState } from 'react';
+import { 
+  AppBar, 
+  Toolbar, 
+  Button, 
+  Box, 
+  styled, 
+  Menu, 
+  MenuItem, 
+  IconButton 
+} from "@mui/material";
+import { Link } from "react-router-dom";
+import { Link as ScrollLink } from "react-scroll";
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-// Styled components using MUI's styled API
+// Styled components
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   backgroundColor: 'white',
   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -14,11 +26,13 @@ const Logo = styled('span')(({ theme }) => ({
   fontFamily: "'Playfair Display', serif",
 }));
 
-const StyledNavLink = styled('a')(({ theme }) => ({
+const StyledNavLink = styled(ScrollLink)(({ theme }) => ({
   color: '#4B5563',
   textDecoration: 'none',
   fontWeight: 500,
   transition: 'color 0.3s ease',
+  cursor: 'pointer',
+  marginRight: theme.spacing(2),
   '&:hover': {
     color: '#FFD700',
   },
@@ -34,33 +48,96 @@ const OrderButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const handleScroll = (id) => {
-  const section = document.getElementById(id);
-  if (section) section.scrollIntoView({ behavior: 'smooth' });
-};
-
-
 const Navbar = () => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleProfileMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
     <StyledAppBar position="sticky">
-      <Toolbar sx={{ padding: '20px 40px' }}>
-        <Box className="logo">
-          <Logo>CupCake</Logo>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Logo */}
+        <Logo>CupCake</Logo>
+
+        {/* Navigation Links */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <StyledNavLink to="home" smooth={true} duration={500}>Home</StyledNavLink>
+          <StyledNavLink to="about" smooth={true} duration={500}>About</StyledNavLink>
+          <StyledNavLink to="menu" smooth={true} duration={500}>Menu</StyledNavLink>
+          <StyledNavLink to="contact" smooth={true} duration={500}>Contact</StyledNavLink>
         </Box>
-        
-        <Box sx={{ 
-          display: 'flex', 
-          gap: '32px', 
-          alignItems: 'center',
-          marginLeft: 'auto'
-        }}>
-          <StyledNavLink href="#home">Home</StyledNavLink>
-          <StyledNavLink href="#about">About</StyledNavLink>
-          <StyledNavLink href="#menu">Menu</StyledNavLink>
-          <StyledNavLink href="#contact">Contact</StyledNavLink>
-          <OrderButton variant="contained">
-            Order
-          </OrderButton>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {/* Profile Menu */}
+          <IconButton 
+            onClick={handleProfileMenuOpen}
+            sx={{ 
+              color: '#4B5563', 
+              marginRight: 2,
+              '&:hover': { 
+                backgroundColor: 'rgba(0,0,0,0.05)' 
+              } 
+            }}
+          >
+            <AccountCircleIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem 
+              component={Link} 
+              to="/profile/overview" 
+              onClick={handleProfileMenuClose}
+            >
+              Profile Overview
+            </MenuItem>
+
+            <MenuItem 
+              component={Link} 
+              to="/profile/orders" 
+              onClick={handleProfileMenuClose}
+            >
+              Order History
+            </MenuItem>
+            <MenuItem 
+              component={Link} 
+              to="/profile/settings" 
+              onClick={handleProfileMenuClose}
+            >
+              Account Settings
+            </MenuItem>
+            <MenuItem 
+              component={Link} 
+              to="/logout" 
+              onClick={handleProfileMenuClose}
+            >
+              Logout
+            </MenuItem>
+          </Menu>
+
+          {/* Order Button with Link */}
+          <Link to="/fullmenu">
+            <OrderButton variant="contained">
+              Order
+            </OrderButton>
+          </Link>
         </Box>
       </Toolbar>
     </StyledAppBar>

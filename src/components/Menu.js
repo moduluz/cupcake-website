@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   Container, 
   Grid, 
@@ -11,7 +11,6 @@ import {
   Box
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Link } from "react-router-dom";
 
 const StyledSection = styled("section")({
   padding: "80px 0",
@@ -43,6 +42,13 @@ const menuItems = [
 ];
 
 const Menu = () => {
+  const [cart, setCart] = useState([]);
+
+  const handleAddToCart = (item) => {
+    setCart((prevCart) => [...prevCart, item]);
+    alert(`${item.title} added to cart!`);
+  };
+
   return (
     <StyledSection>
       <Container maxWidth="lg">
@@ -79,22 +85,20 @@ const Menu = () => {
                     </Typography>
                   </CardContent>
                 </CardActionArea>
+                <Box sx={{ padding: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    onClick={() => handleAddToCart(item)}
+                  >
+                    Add to Cart
+                  </Button>
+                </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
-
-        <Box display="flex" justifyContent="center" marginTop={4}>
-          <Button 
-            component={Link} 
-            to="/FullMenu" 
-            variant="contained" 
-            color="primary" 
-            size="large"
-          >
-            View Full Menu &gt;&gt;
-          </Button>
-        </Box>
       </Container>
     </StyledSection>
   );

@@ -84,7 +84,7 @@ const DecorativeCircle = styled("div")({
 
 const About = () => {
   return (
-    <CakeSection>
+    <CakeSection id="about">
       <DecorativeCircle 
         sx={{
           width: "400px",
