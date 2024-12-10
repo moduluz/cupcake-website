@@ -65,13 +65,6 @@ function App() {
   );
 }
 
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-export default App;
-=======
-export default App;
->>>>>>> 0e84adf (Initial commit)
-=======
 function ConditionalNavbar() {
   const location = useLocation();
 
@@ -80,4 +73,4 @@ function ConditionalNavbar() {
 }
 
 export default App;
->>>>>>> Stashed changes
+

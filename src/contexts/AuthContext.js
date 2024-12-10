@@ -1,48 +1,102 @@
-//C:\JavaScript\cupp cake\cupcake-website\src\contexts\AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode'; // Changed from jwt_decode to jwtDecode
 
 const AuthContext = createContext(null);
 const API_BASE_URL = 'http://localhost:5000/api/auth';
 
-export const AuthProvider = ({ children }) => {
+// Custom hook for using auth context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check for user in localStorage on component mount
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUser(token);
-    }
-  }, []);
-
-  const fetchUser = async (token) => {
+  const validateAndFetchUser = async (token) => {
     try {
-      console.log('Fetching user with token:', token);
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'GET', // Explicitly set method to GET
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`, // Ensure 'Bearer ' prefix
-          'Content-Type': 'application/json', // Add content type
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
 
-      console.log('Fetch user response:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Fetch user error response:', errorText);
-        throw new Error('Failed to fetch user');
+        throw new Error('Failed to fetch user data');
       }
-      
-      const data = await response.json();
-      console.log('Fetched user:', data);
-      setUser(data);
+
+      if (response.status === 401) {
+        logout();
+        return;
+      }
+
+      const userData = await response.json();
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('User validation error:', error);
       logout();
     }
   };
+
+  const checkTokenExpiration = useCallback(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    try {
+      const decodedToken = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      
+      // Check if token is expired or about to expire in 5 minutes
+      if (decodedToken.exp < currentTime + 300) {
+        logout();
+        return false;
+      }
+      return true;
+    } catch {
+      logout();
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (token && checkTokenExpiration()) {
+        try {
+          await validateAndFetchUser(token);
+        } catch (error) {
+          console.error('Auth initialization error:', error);
+          logout();
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+
+    // Set up token expiration check interval
+    const intervalId = setInterval(() => {
+      checkTokenExpiration();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(intervalId);
+  }, [checkTokenExpiration, validateAndFetchUser]);
+
   
 
   const login = async (email, password) => {
@@ -56,11 +110,13 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (!response.ok) {
+        const errorData = await response.json();
         throw new Error('Invalid credentials');
       }
       
       const data = await response.json();
       setUser(data.user);
+      setIsAuthenticated(true);
       localStorage.setItem('token', data.token);
       setError(null);
       return data.user;
@@ -95,6 +151,7 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       localStorage.setItem('token', data.token);
       setUser(data.user);
+      setIsAuthenticated(true);
       setError(null);
       return data.user;
     } catch (error) {
@@ -104,11 +161,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
+    setIsAuthenticated(false);
     localStorage.removeItem('token');
     setError(null);
-  };
+  }, []);
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
 
   const addTokenToRequest = (config) => {
     const token = localStorage.getItem('token');
@@ -121,7 +184,8 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider 
       value={{ 
-        user, 
+        user,
+        isAuthenticated,
         login, 
         register, 
         logout, 
@@ -132,14 +196,6 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === null) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };
 
 export default AuthContext;

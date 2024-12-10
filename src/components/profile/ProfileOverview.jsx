@@ -1,32 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, 
-  CardHeader, 
-  CardContent, 
-  Avatar, 
-  Divider, 
-  Typography 
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
+  Typography,
+  Box,
+  CircularProgress
 } from '@mui/material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { styled } from '@mui/material/styles';
+
+// Styled components
+const StyledCard = styled(Card)(({ theme }) => ({
+  maxWidth: '600px',
+  margin: '0 auto',
+  padding: theme.spacing(2)
+}));
+
+const LoadingContainer = styled(Box)({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '200px'
+});
+
+const ErrorContainer = styled(Typography)(({ theme }) => ({
+  color: theme.palette.error.main,
+  padding: theme.spacing(2)
+}));
+
+const InfoSection = styled(Box)(({ theme }) => ({
+  marginBottom: theme.spacing(3)
+}));
 
 const ProfileOverview = () => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth(); // Added isAuthenticated from context
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        
+        console.log('Attempting to fetch profile with token:', token);
+
         if (!token) {
-          console.log('No authentication token found, redirect to login');
-          logout();
-          navigate('/login');
-          return;
+          throw new Error('No token found, please log in');
         }
 
         const response = await fetch('http://localhost:5000/api/auth/profile', {
@@ -35,48 +64,56 @@ const ProfileOverview = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
+          credentials: 'include'
         });
 
-        console.log('Profile fetch response:', response.status);
+        console.log('Profile response status:', response.status);
+
+        if (response.status === 401) {
+          console.log('Unauthorized access, redirecting to login');
+          logout();
+          navigate('/login');
+          return;
+        }
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Full error response:', errorText);
-          throw new Error(`Failed to fetch profile: ${response.status} ${errorText}`);
+          const errorData = await response.text();
+          console.error('Error response:', errorData);
+          throw new Error(errorData || 'Failed to fetch profile');
         }
 
         const data = await response.json();
+        console.log('Successfully fetched profile data:', data);
         setProfileData(data);
       } catch (err) {
         console.error('Profile fetch error:', err);
         setError(err.message);
+
+        if (err.message.includes('401') || err.message.includes('auth')) {
+          logout();
+          navigate('/login');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [logout, navigate]);  // Removed user dependency to avoid unnecessary re-fetches
+  }, [isAuthenticated, logout, navigate]);
 
   if (loading) {
     return (
-      <Card sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
-        <CardContent>
-          <Typography align="center">Loading profile...</Typography>
-        </CardContent>
-      </Card>
+      <LoadingContainer>
+        <CircularProgress />
+      </LoadingContainer>
     );
   }
 
   if (error) {
     return (
-      <Card sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
-        <CardContent>
-          <Typography color="error" align="center">
-            Error: {error}
-          </Typography>
-        </CardContent>
-      </Card>
+      <ErrorContainer variant="body1">
+        Error: {error}
+      </ErrorContainer>
     );
   }
 
@@ -84,34 +121,63 @@ const ProfileOverview = () => {
 
   if (!userData) {
     return (
-      <Card sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
-        <CardContent>
-          <Typography align="center">No user information available</Typography>
-        </CardContent>
-      </Card>
+      <Typography variant="body1" sx={{ p: 2 }}>
+        No user information available
+      </Typography>
     );
   }
 
   return (
-    <Card sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
+    <StyledCard>
       <CardHeader
         avatar={
-          <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
+          <Avatar
+            sx={{
+              width: 64,
+              height: 64,
+              fontSize: '2rem',
+              bgcolor: 'primary.main'
+            }}
+          >
             {userData.username?.charAt(0)?.toUpperCase()}
           </Avatar>
         }
-        title={<Typography variant="h5" fontWeight="bold">{userData.username}</Typography>}
-        subheader={`Member since ${new Date(userData.created_at).toLocaleDateString()}`}
+        title={
+          <Typography variant="h5" component="h2">
+            {userData.username}
+          </Typography>
+        }
+        subheader={
+          <Typography variant="subtitle1" color="text.secondary">
+            Member since {new Date(userData.created_at).toLocaleDateString()}
+          </Typography>
+        }
       />
       <CardContent>
-        <Typography variant="h6" gutterBottom>Contact Information</Typography>
-        <Typography>Email: {userData.email}</Typography>
+        <InfoSection>
+          <Typography variant="h6" gutterBottom>
+            Contact Information
+          </Typography>
+          <Typography variant="body1">
+            Email: {userData.email}
+          </Typography>
+        </InfoSection>
+        
         <Divider sx={{ my: 2 }} />
-        <Typography variant="h6" gutterBottom>Account Details</Typography>
-        <Typography>Role: {userData.role || 'Customer'}</Typography>
-        <Typography>User ID: {userData.id}</Typography>
+        
+        <InfoSection>
+          <Typography variant="h6" gutterBottom>
+            Account Details
+          </Typography>
+          <Typography variant="body1" paragraph>
+            Role: {userData.role || 'Customer'}
+          </Typography>
+          <Typography variant="body1">
+            User ID: {userData.id}
+          </Typography>
+        </InfoSection>
       </CardContent>
-    </Card>
+    </StyledCard>
   );
 };
 
